@@ -1,7 +1,9 @@
 using AutoMapper;
 using MediatR;
+using Newtonsoft.Json;
 using Para.Base.Response;
 using Para.Bussiness.Cqrs;
+using Para.Bussiness.RabbitMQ;
 using Para.Data.Domain;
 using Para.Data.UnitOfWork;
 using Para.Schema;
@@ -15,11 +17,13 @@ public class UserCommandHandler :
 {
     private readonly IUnitOfWork unitOfWork;
     private readonly IMapper mapper;
+    private readonly RabbitMQClient _rabbitMQClient;
 
-    public UserCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    public UserCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, RabbitMQClient rabbitMQClient)
     {
         this.unitOfWork = unitOfWork;
         this.mapper = mapper;
+        _rabbitMQClient = rabbitMQClient;
     }
 
     public async Task<ApiResponse<UserResponse>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -30,6 +34,19 @@ public class UserCommandHandler :
         await unitOfWork.Complete();
 
         var response = mapper.Map<UserResponse>(mapped);
+
+        // Mesajý RabbitMQ kuyruðuna göndermek
+        var emailMessage = new
+        {
+            To = request.Request.Email, // E-posta adresini request'ten al
+            Subject = "Welcome to our service!",
+            Body = $"Hello {request.Request.FirstName}, your account has been created."
+        };
+
+        var jsonMessage = JsonConvert.SerializeObject(emailMessage);
+        // RabbitMQClient servisi kullanarak mesaj gönderimi
+        await _rabbitMQClient.SendMessageAsync(jsonMessage, "emailQueue");
+
         return new ApiResponse<UserResponse>(response);
     }
 

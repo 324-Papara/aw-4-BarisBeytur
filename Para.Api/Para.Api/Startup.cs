@@ -16,6 +16,7 @@ using Para.Base.Token;
 using Para.Bussiness;
 using Para.Bussiness.Cqrs;
 using Para.Bussiness.Notification;
+using Para.Bussiness.RabbitMQ;
 using Para.Bussiness.Token;
 using Para.Bussiness.Validation;
 using Para.Data.Context;
@@ -70,7 +71,7 @@ public class Startup
         services.AddSingleton<CustomService3>();
 
         services.AddScoped<ITokenService, TokenService>();
-        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<INotificationService, EmailJob>();
 
         services.AddAuthentication(x =>
         {
@@ -136,7 +137,18 @@ public class Startup
             .UseRecommendedSerializerSettings()
             .UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
         services.AddHangfireServer();
-        
+
+        // Configure RabbitMQClient
+        var rabbitMqSettings = Configuration.GetSection("RabbitMQ");
+        services.AddSingleton<RabbitMQClient>(sp => new RabbitMQClient(
+            rabbitMqSettings["HostName"],
+            int.Parse(rabbitMqSettings["Port"]),
+            rabbitMqSettings["UserName"],
+            rabbitMqSettings["Password"],
+            rabbitMqSettings["QueueName"]
+        ));
+
+        services.AddSingleton<INotificationService, EmailJob>();
 
         services.AddScoped<ISessionContext>(provider =>
         {
@@ -148,7 +160,7 @@ public class Startup
         });
     }
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs, IRecurringJobManager recurringJobManager)
     {
         if (env.IsDevelopment())
         {
@@ -156,6 +168,8 @@ public class Startup
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Para.Api v1"));
         }
+
+        recurringJobManager.AddOrUpdate<EmailJob>("process-email-queue", job => job.ProcessQueue(), "*/5 * * * * *");
 
 
         app.UseMiddleware<HeartbeatMiddleware>();
@@ -171,6 +185,8 @@ public class Startup
         //app.UseMiddleware<RequestLoggingMiddleware>(requestResponseHandler);
 
         app.UseHangfireDashboard();
+        app.UseHangfireServer();
+
 
         app.UseHttpsRedirection();
         app.UseAuthentication();
@@ -214,4 +230,6 @@ public class Startup
             await context.Response.WriteAsync($"Service3 : {service3.Counter}\n");
         });
     }
+
+
 }

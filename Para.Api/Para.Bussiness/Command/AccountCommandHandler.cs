@@ -50,7 +50,7 @@ public class AccountCommandHandler :
     [AutomaticRetryAttribute(Attempts = 3,DelaysInSeconds = new []{10,15,18 },OnAttemptsExceeded = AttemptsExceededAction.Fail)]
      public void SendEmail(string email,string name,string currencyCode)
     {
-        notificationService.SendEmail("Yeni hesap acilisi",email,$"Merhaba, {name}, Adiniza ${currencyCode} doviz cinsi hesabiniz acilmistir.");
+        //notificationService.SendEmail("Yeni hesap acilisi",email,$"Merhaba, {name}, Adiniza ${currencyCode} doviz cinsi hesabiniz acilmistir.");
     }
 
     public async Task<ApiResponse> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)

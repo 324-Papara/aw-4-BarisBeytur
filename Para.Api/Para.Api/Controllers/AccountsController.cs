@@ -27,8 +27,6 @@ namespace Para.Api.Controllers
         [Authorize(Roles = "admin")]
         public async Task<ApiResponse<List<AccountResponse>>> Get()
         {
-            NotificationService service = new NotificationService(_configuration);
-            service.SendEmail("subject", "email", "content");
             var operation = new GetAllAccountQuery();
             var result = await mediator.Send(operation);
             return result;
