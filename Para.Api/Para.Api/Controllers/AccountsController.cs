@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Para.Base.Response;
 using Para.Bussiness.Cqrs;
+using Para.Bussiness.Notification;
 using Para.Schema;
 
 namespace Para.Api.Controllers
@@ -13,10 +14,12 @@ namespace Para.Api.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IMediator mediator;
-        
-        public AccountsController(IMediator mediator)
+        private readonly IConfiguration _configuration;
+
+        public AccountsController(IMediator mediator, IConfiguration configuration)
         {
             this.mediator = mediator;
+            _configuration = configuration;
         }
 
 
@@ -24,6 +27,8 @@ namespace Para.Api.Controllers
         [Authorize(Roles = "admin")]
         public async Task<ApiResponse<List<AccountResponse>>> Get()
         {
+            NotificationService service = new NotificationService(_configuration);
+            service.SendEmail("subject", "email", "content");
             var operation = new GetAllAccountQuery();
             var result = await mediator.Send(operation);
             return result;

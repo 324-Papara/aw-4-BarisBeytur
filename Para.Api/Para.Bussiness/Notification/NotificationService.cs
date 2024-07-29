@@ -1,32 +1,33 @@
+using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Net.Mail;
 
 namespace Para.Bussiness.Notification;
 
-public class NotificationService  : INotificationService
+public class NotificationService : INotificationService
 {
+
+    private readonly IConfiguration _configuration;
+
+    public NotificationService(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
     public void SendEmail(string subject, string email, string content)
     {
-        
-        SmtpClient mySmtpClient = new SmtpClient("my.smtp.exampleserver.net");
+        MailMessage mailim = new MailMessage();
+        mailim.To.Add("beyturbaris@gmail.com");
+        mailim.From = new MailAddress("deprembilgideposu@gmail.com");
+        mailim.Subject = "Yeni bir bildiriminiz var!";
+        mailim.Body = "Mail test body.";
+        mailim.IsBodyHtml = true;
+        SmtpClient smtpClient = new SmtpClient();
+        smtpClient.Credentials = new NetworkCredential(_configuration["SmtpSettings:Username"], _configuration["SmtpSettings:Password"]);
 
-        mySmtpClient.UseDefaultCredentials = false;
-        System.Net.NetworkCredential basicAuthenticationInfo = new
-            System.Net.NetworkCredential("username", "password");
-        mySmtpClient.Credentials = basicAuthenticationInfo;
-
-        MailAddress from = new MailAddress("test@example.com", "TestFromName");
-        MailAddress to = new MailAddress(email, "TestToName");
-        MailMessage myMail = new System.Net.Mail.MailMessage(from, to);
-        MailAddress replyTo = new MailAddress("reply@example.com");
-        myMail.ReplyToList.Add(replyTo);
-
-        myMail.Subject = subject;
-        myMail.SubjectEncoding = System.Text.Encoding.UTF8;
-
-        myMail.Body = "<b>Test Mail</b><br>using <b>HTML</b>." + content;
-        myMail.BodyEncoding = System.Text.Encoding.UTF8;
-        myMail.IsBodyHtml = true;
-
-        mySmtpClient.Send(myMail);
+        smtpClient.Port = Convert.ToInt32(_configuration["SmtpSettings:Port"]);
+        smtpClient.Host = _configuration["SmtpSettings:Host"];
+        smtpClient.EnableSsl = true;
+        smtpClient.Send(mailim);
     }
 }
