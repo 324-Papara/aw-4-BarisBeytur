@@ -27,13 +27,13 @@ public class AuthorizationCommandHandler : IRequestHandler<CreateAuthorizationTo
         if (user is null)
             return new ApiResponse<AuthorizationResponse>("Invalid user informations. Check your username or password. E1");
 
-        if (user.Password != CreateMD5(request.Request.Password))
+        if (CreateMD5(user.Password)!= CreateMD5(request.Request.Password))
         {
-            return new ApiResponse<AuthorizationResponse>("Invalid user informations. Check your username or password. E1");
+            return new ApiResponse<AuthorizationResponse>("Invalid user informations. Check your username or password. E2");
         }
 
         if (user.Status != 1 )
-            return new ApiResponse<AuthorizationResponse>("Invalid user informations. Check your username or password. E2");
+            return new ApiResponse<AuthorizationResponse>("Invalid user informations. Check your username or password. E3");
 
         var token = await tokenService.GetToken(user);
         AuthorizationResponse response = new AuthorizationResponse()

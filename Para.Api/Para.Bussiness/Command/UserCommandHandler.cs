@@ -25,6 +25,7 @@ public class UserCommandHandler :
     public async Task<ApiResponse<UserResponse>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
         var mapped = mapper.Map<UserRequest, User>(request.Request);
+        mapped.Status = 1;
         await unitOfWork.UserRepository.Insert(mapped);
         await unitOfWork.Complete();
 
